@@ -37,7 +37,7 @@ import java.awt.image.BufferedImage
 @Preview
 fun App() {
     var cameraModel = remember { CameraModel() }
-    var shapModel = remember { ShapeModel() }
+
     MaterialTheme {
         Scaffold(topBar = {
             TopAppBar(title = { Text("Shape Editor") })
@@ -46,11 +46,15 @@ fun App() {
                 CameraDialog(cameraModel)
                 Row(Modifier.fillMaxSize()) {
                     Canvas(Modifier.fillMaxSize()) {
+
+                        val resources = Resources()
+                        val shapModel =  ShapeModel(resources)
                         drawRect(Color.LightGray)
+
                         val model: Model = shapModel.shape
-                        val engine = ScanLineEngine(256, 192, model, Resources())
+                        val engine = ScanLineEngine(256, 192, model, resources)
                         val camera = cameraModel.toCamera()
-                        model.lookAt(camera, Vertex2D(1.5f, 1.5f), Vertex2D(120f, 80f))
+                        model.lookAt(camera, Vertex2D(1f, 1f), Vertex2D(127f, 96f))
                         val tiles = model.triangles
 
                         val image = engine.draw(tiles)

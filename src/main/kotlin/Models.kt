@@ -23,14 +23,20 @@ import androidx.compose.ui.graphics.toArgb
 import dev.secondsun.geometry.Camera
 import dev.secondsun.geometry.Model
 import dev.secondsun.geometry.Vertex
+import dev.secondsun.geometry.Vertex2D
 import dev.secondsun.util.CubeBuilder
+import dev.secondsun.util.Resources
 import java.lang.Exception
+import javax.imageio.ImageIO
 import kotlin.Triple
 
-class ShapeModel {
+class ShapeModel(val resources: Resources = Resources()) {
+    val backGroundId = resources.setImage(ImageIO.read(ShapeModel::class.java.getClassLoader().getResourceAsStream("background.png")));
+    val bg1 = resources.setTexture(backGroundId,  Vertex2D(0f,0f),255,255);
+    val bg2 = resources.setTexture(backGroundId,  Vertex2D(255f,255f),-255,-255);
 
     val cube = (
-        with(CubeBuilder(Vertex.ZERO, 8f, 8f, 8f)) {
+        with(CubeBuilder(Vertex(-127f,-4f,-127f ), 128f, 8f, 128f)) {
             top1 = Color.Red.toArgb()
             top2 = Color.Red.toArgb()
 
@@ -46,8 +52,8 @@ class ShapeModel {
             down1 = Color.Cyan.toArgb()
             down2 = Color.Cyan.toArgb()
 
-            up1 = Color.Yellow.toArgb()
-            up2 = Color.Yellow.toArgb()
+            up1 = bg1
+            up2 = bg2
             this
         }
         ).cube()
@@ -63,8 +69,8 @@ class CameraModel {
         return Camera(eye.value.toVertex(), lookAt.value.toVertex(), up.value.toVertex())
     }
 
-    var eye = mutableStateOf(Triple("-16.0", "16.0", "-16.0"))
-    var up = mutableStateOf(Triple("0.0", "1.0", "0.0"))
+    var eye = mutableStateOf(Triple("-255.0", "128.0", "255.0"))
+    var up = mutableStateOf(Triple("0.0", ".7", ".3"))
     var lookAt = mutableStateOf(Triple("0.0", "0.0", "0.0"))
 
     private fun <A, B, C> Triple<A, B, C>.toVertex(): Vertex {
@@ -75,6 +81,7 @@ class CameraModel {
                 third.toString().toFloat(),
             )
         } catch (ignore: Exception) {
+            System.out.println(ignore)
             return Vertex.ZERO
         }
     }
