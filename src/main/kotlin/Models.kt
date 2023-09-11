@@ -32,8 +32,8 @@ import kotlin.Triple
 
 class ShapeModel(val resources: Resources = Resources()) {
     val backGroundId = resources.setImage(ImageIO.read(ShapeModel::class.java.getClassLoader().getResourceAsStream("background.png")));
-    val bg1 = resources.setTexture(backGroundId,  Vertex2D(0f,0f),255,255);
-    val bg2 = resources.setTexture(backGroundId,  Vertex2D(255f,255f),-255,-255);
+    val bg1 = resources.setTexture(backGroundId,  Vertex2D(32f,32f),192,192);
+    val bg2 = resources.setTexture(backGroundId,  Vertex2D(192f,192f),-192,-192);
 
     val cube = (
         with(CubeBuilder(Vertex(-127f,-4f,-127f ), 128f, 8f, 128f)) {
@@ -69,7 +69,7 @@ class CameraModel {
         return Camera(eye.value.toVertex(), lookAt.value.toVertex(), up.value.toVertex())
     }
 
-    var eye = mutableStateOf(Triple("-255.0", "128.0", "255.0"))
+    var eye = mutableStateOf(Triple("30.0", "10.0", "130.0"))
     var up = mutableStateOf(Triple("0.0", ".7", ".3"))
     var lookAt = mutableStateOf(Triple("0.0", "0.0", "0.0"))
 

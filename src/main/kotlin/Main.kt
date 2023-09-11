@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import dev.secondsun.game.ScanLineEngine
@@ -54,7 +55,7 @@ fun App() {
                         val model: Model = shapModel.shape
                         val engine = ScanLineEngine(256, 192, model, resources)
                         val camera = cameraModel.toCamera()
-                        model.lookAt(camera, Vertex2D(1f, 1f), Vertex2D(127f, 96f))
+                        model.lookAt(camera, Vertex2D(2f, 2f), Vertex2D(127f, 96f))
                         val tiles = model.triangles
 
                         val image = engine.draw(tiles)
@@ -65,7 +66,7 @@ fun App() {
                             }
                         }
 
-                        drawImage(iOut.toComposeImageBitmap(), dstSize = IntSize(1024, 768))
+                        drawImage(iOut.toComposeImageBitmap(), filterQuality = FilterQuality.Low, dstSize = IntSize(1024.dp.roundToPx(), 768.dp.roundToPx()))
                     }
                 }
             }
