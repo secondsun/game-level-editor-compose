@@ -21,8 +21,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,21 +31,22 @@ import kotlin.Triple
 
 @Composable
 fun CameraDialog(cameraModel: CameraModel) {
-    val eye = cameraModel.eye
-    val lookAt = cameraModel.lookAt
-    val up = cameraModel.up
+
+    val eye =  cameraModel.eye.collectAsState()
+    val lookAt =  cameraModel.lookAt.collectAsState()
+    val up =  cameraModel.up.collectAsState()
     Row {
         Column() {
-            TripleFieldRow("Camera Position", eye)
-            TripleFieldRow("Camera Up", up)
-            TripleFieldRow("Camera Look At", lookAt)
+            TripleFieldRow("Camera Position", eye.value) {cameraModel.setEye(it)}
+            TripleFieldRow("Camera Up", up.value){}
+            TripleFieldRow("Camera Look At", lookAt.value){cameraModel.setLookAt(it)}
         }
     }
 }
 
 @Composable
-fun TripleFieldRow(label: String, tripleState: MutableState<Triple<String, String, String>>) {
-    val triple = tripleState.value
+fun TripleFieldRow(label: String, triple: Triple<String, String, String>, onValueChange: (Triple<String,String,String>)->Unit) {
+
     Row {
         Text(textAlign = TextAlign.End, modifier = Modifier.align(Alignment.CenterVertically).widthIn(min = 64.dp).fillMaxWidth(.1f), text = label)
         Spacer(Modifier.padding(8.dp))
@@ -55,19 +55,19 @@ fun TripleFieldRow(label: String, tripleState: MutableState<Triple<String, Strin
                 modifier = Modifier.background(Color.White).weight(1f),
                 label = { Text("X") },
                 value = (triple.first),
-                onValueChange = { tripleState.value = Triple(it, triple.second, triple.third) },
+                onValueChange = {onValueChange(Triple(it, triple.second,triple.third))}
             )
             TextField(
                 modifier = Modifier.background(Color.White).weight(1f),
                 label = { Text("Y") },
                 value = (triple.second),
-                onValueChange = { tripleState.value = Triple(triple.first, it, triple.third) },
+                onValueChange = {onValueChange(Triple(triple.first, it,triple.third))}
             )
             TextField(
                 modifier = Modifier.background(Color.White).weight(1f),
                 label = { Text("Z") },
                 value = (triple.third),
-                onValueChange = { tripleState.value = Triple(triple.first, triple.second, it) },
+                onValueChange = {onValueChange(Triple(triple.first, triple.second, it))}
             )
         }
     }

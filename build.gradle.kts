@@ -6,13 +6,14 @@ plugins {
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     google()
 }
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("dev.secondsun:java-isoengine:0.7")
+    implementation("dev.secondsun:java-isoengine:0.8")
 }
 
 compose.desktop {

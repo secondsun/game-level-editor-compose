@@ -37,7 +37,7 @@ import java.awt.image.BufferedImage
 @Composable
 @Preview
 fun App() {
-    var cameraModel = remember { CameraModel() }
+    var cameraModel = CameraModel()
 
     MaterialTheme {
         Scaffold(topBar = {
@@ -53,16 +53,16 @@ fun App() {
                         drawRect(Color.LightGray)
 
                         val model: Model = shapModel.shape
-                        val engine = ScanLineEngine(256, 192, model, resources)
+                        val engine = ScanLineEngine(512, 384, model, resources)
                         val camera = cameraModel.toCamera()
-                        model.lookAt(camera, Vertex2D(2f, 2f), Vertex2D(127f, 96f))
+                        model.lookAt(camera, Vertex2D(2f, 2f), Vertex2D(256f, 192f))
                         val tiles = model.triangles
 
                         val image = engine.draw(tiles)
-                        val iOut = BufferedImage(256, 192, BufferedImage.TYPE_INT_ARGB)
-                        for (x: Int in 0..255) {
-                            for (y: Int in 0..191) {
-                                iOut.setRGB(x, y, image[x + y * 256])
+                        val iOut = BufferedImage(512, 384, BufferedImage.TYPE_INT_ARGB)
+                        for (x: Int in 0..511) {
+                            for (y: Int in 0..383) {
+                                iOut.setRGB(x, y, image[x + y * 512])
                             }
                         }
 
