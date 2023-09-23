@@ -17,14 +17,9 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import dev.secondsun.geometry.Camera
-import dev.secondsun.geometry.Model
-import dev.secondsun.geometry.Vertex
-import dev.secondsun.geometry.Vertex2D
+import dev.secondsun.geometry.*
 import dev.secondsun.util.CubeBuilder
 import dev.secondsun.util.Resources
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,36 +31,87 @@ import javax.imageio.ImageIO
 import kotlin.Triple
 
 class ShapeModel(val resources: Resources = Resources()) {
-    val backGroundId = resources.setImage(ImageIO.read(ShapeModel::class.java.getClassLoader().getResourceAsStream("background.png")));
-    val bg1 = resources.setTexture(backGroundId,  Vertex2D(0f,0f),255,255);
-    val bg2 = resources.setTexture(backGroundId,  Vertex2D(255f,0f),-255,255);
+    val backGroundId = resources.setImage(ImageIO.read(ShapeModel::class.java.getClassLoader().getResourceAsStream("bg12.png")));
+    val backGround2Id = resources.setImage(ImageIO.read(ShapeModel::class.java.getClassLoader().getResourceAsStream("bg34.png")));
+    val bg1 = resources.setTexture(backGroundId,  Vertex2D(128f,128f),128,128);
+    val bg2 = resources.setTexture(backGroundId,  Vertex2D(0f,0f),-128,-128);
 
-    val cube = (
-        with(CubeBuilder(Vertex(-64f,-4f,-64f ), 128f, 8f, 128f)) {
-            top1 = bg2
-            top2 = bg1
+    val bg3 = resources.setTexture(backGround2Id,  Vertex2D(0f,0f),32,92);
+    val bg4 = resources.setTexture(backGround2Id,  Vertex2D(0f,0f),-32,-92);
 
-            bottom1 = Color.Green.toArgb()
-            bottom2 = Color.Green.toArgb()
+    val column2builder = (
+            with(CubeBuilder(Vertex(-32f,0f,-48f ), 16f, 64f, 16f)) {
+                top1 = Color.Black.toArgb()
+                top2 = Color.Black.toArgb()
 
-            right1 = Color.Blue.toArgb()
-            right2 = Color.Blue.toArgb()
+                bottom1 = bg1
+                bottom2 = bg2
 
-            left1 = Color.White.toArgb()
-            left2 = Color.White.toArgb()
+                right1 = bg3
+                right2 = bg4
 
-            near1 = Color.Yellow.toArgb()
-            near2 = Color.Yellow.toArgb()
+                left1 = bg3
+                left2 = bg4
 
-            far1 = Color.Cyan.toArgb()
-            far2 = Color.Cyan.toArgb()
+                near1 = bg3
+                near2 = bg4
+
+                far1 = bg3
+                far2 = bg4
+                this
+            }).disableBottom()
+
+    val column1Builder  = (
+            with(CubeBuilder(Vertex(16f,0f,24f ), 16f, 64f, 16f)) {
+                top1 = Color.Black.toArgb()
+                top2 = Color.Black.toArgb()
+
+                bottom1 = bg1
+                bottom2 = bg2
+
+                right1 = bg3
+                right2 = bg4
+
+                left1 = bg3
+                left2 = bg4
+
+                near1 = bg3
+                near2 = bg4
+
+                far1 = bg3
+                far2 = bg4
+                this
+            }).disableBottom()
+
+    val floorBuilder = (
+        with(CubeBuilder(Vertex(-64f,-64f,-64f ), 128f, 64f, 128f)) {
+            top1 = bg1
+            top2 = bg2
+
+            bottom1 = bg1
+            bottom2 = bg2
+
+            right1 = bg1
+            right2 = bg2
+
+            left1 = bg1
+            left2 = bg2
+
+            near1 = bg1
+            near2 = bg2
+
+            far1 = bg1
+            far2 = bg2
             this
-        }
-        ).cube()
+        })
 
     val shape: Model
         get() {
-            return cube
+            return Model.of((ArrayList<Triangle?>().apply {
+                addAll(column1Builder.cube().triangles)
+                addAll(column2builder.cube().triangles)
+                addAll(floorBuilder.cube().triangles)
+            }))
         }
 }
 
@@ -74,18 +120,17 @@ class CameraModel {
         return Camera(eye.value.toVertex(), lookAt.value.toVertex(), up.value.toVertex())
     }
 
-    val _eye = MutableStateFlow(Triple("0.0", "0.0", "-130.0"))
+    val _eye = MutableStateFlow(Triple("0.02", "90.0", "0.01"))
     val eye  : StateFlow<Triple<String,String,String>> = _eye.asStateFlow()
 
 
     val _lookAt = MutableStateFlow(Triple("0.0", "0.0", "0.0"))
     val lookAt : StateFlow<Triple<String,String,String>> = _lookAt.asStateFlow()
 
-    val _up = MutableStateFlow(Triple("0.0", "0.0", "-130.0"))
+    val _up = MutableStateFlow(Triple("-0.89", "0.0", "-0.45"))
     val up : StateFlow<Triple<String,String,String>> = _up.asStateFlow()
 
     fun setEye(eyeIn : Triple<String,String,String>) {
-        System.out.println(eyeIn)
         _eye.update {  eyeIn };
         calcUp(_up)
     }
@@ -102,37 +147,55 @@ class CameraModel {
         val yAxis = Vertex(0f,1f,0f);
         val right = yAxis.cross(forward).normalize()
         val up = forward.cross(right).normalize()
-        System.out.println("Up " + up)
         _up.update { up.toTriple()}
         return _up
     }
 
-
-
-    private fun <A, B, C> Triple<A, B, C>.toVertex(): Vertex {
-        try {
-            return Vertex(
-                first.toString().toFloat(),
-                second.toString().toFloat(),
-                third.toString().toFloat(),
-            )
-        } catch (ignore: Exception) {
-            System.out.println(ignore)
-            return Vertex.ZERO
-        }
+    //TODO rename it doesn't do what I think it does yet
+    fun panLookAt(panAmount: Vertex) {
+        val lookAtVertex = _lookAt.value.toVertex()
+        val newLookat = lookAtVertex.translate(panAmount)
+        _lookAt.update { newLookat.toTriple() }
     }
+    
+    //TODO rename it doesn't do what I think it does yet
+    fun panEye(panAmount: Vertex) {
+        val eyeVertex = _eye.value.toVertex()
+        val newEye = eyeVertex.translate(panAmount)
+        _eye.update { newEye.toTriple() }
+    }
+
+
 }
 
-private fun Vertex.subtract(lookatV: Vertex): Vertex {
+private fun Vertex.translate(panAmount: Vertex): Vertex {
+    this.x += panAmount.x
+    this.y += panAmount.y
+    this.z += panAmount.z
+    return this
+}
+
+fun <A, B, C> Triple<A, B, C>.toVertex(): Vertex {
+    try {
+        return Vertex(
+            first.toString().toFloat(),
+            second.toString().toFloat(),
+            third.toString().toFloat(),
+        )
+    } catch (ignore: Exception) {
+        return Vertex.ZERO
+    }
+}
+fun Vertex.subtract(lookatV: Vertex): Vertex {
     return Vertex(this.x - lookatV.x,
                 this.y - lookatV.y,
                 this.z - lookatV.z)
 }
 
-private fun Vertex.toTriple(): Triple<String, String, String> {
+fun Vertex.toTriple(): Triple<String, String, String> {
     return Triple(String.format("%.2f", x),String.format("%.2f", y),String.format("%.2f", z))
 }
 
-private fun Vertex.normalize(): Vertex {
+fun Vertex.normalize(): Vertex {
     return Vertex(this.x/length(),this.y/length(), this.z/length())
 }

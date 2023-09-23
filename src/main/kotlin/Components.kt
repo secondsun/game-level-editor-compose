@@ -36,7 +36,7 @@ fun CameraDialog(cameraModel: CameraModel) {
     val lookAt =  cameraModel.lookAt.collectAsState()
     val up =  cameraModel.up.collectAsState()
     Row {
-        Column() {
+        Column {
             TripleFieldRow("Camera Position", eye.value) {cameraModel.setEye(it)}
             TripleFieldRow("Camera Up", up.value){}
             TripleFieldRow("Camera Look At", lookAt.value){cameraModel.setLookAt(it)}
