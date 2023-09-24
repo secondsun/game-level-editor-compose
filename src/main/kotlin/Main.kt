@@ -40,10 +40,12 @@ import dev.secondsun.geometry.Model
 import dev.secondsun.geometry.Triangle
 import dev.secondsun.geometry.Vertex
 import dev.secondsun.geometry.Vertex2D
+import dev.secondsun.util.Maths
 import dev.secondsun.util.Resources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.awt.image.BufferedImage
+import kotlin.math.PI
 
 
 @Composable
@@ -56,7 +58,7 @@ fun App() {
     var yzRot:Int = 0;
     val shapeModel =  ShapeModel(resources)
     var model: Model = shapeModel.shape
-    val engine = ScanLineEngine(512, 384, model, resources)
+    val engine = ScanLineEngine(64, 64, model, resources)
 
     fun updateEye() {
         var vertex = cameraModel.eye.value.toVertex()
@@ -69,9 +71,9 @@ fun App() {
 
      Dispatchers.Default.dispatch(Dispatchers.Default) {
          runBlocking {
-             cameraModel.eye.collect({ it ->  val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(3.5f, 3.5f), Vertex2D(256f, 192f))})
-             cameraModel.up.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(3.5f, 3.5f), Vertex2D(256f, 192f))})
-             cameraModel.lookAt.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(3.5f, 3.5f), Vertex2D(256f, 192f))})
+             cameraModel.eye.collect({ it ->  val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(.5f, .5f), Vertex2D(64f, 64f))})
+             cameraModel.up.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(.5f, .5f), Vertex2D(64f, 64f))})
+             cameraModel.lookAt.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(.5f, .5f), Vertex2D(64f, 64f))})
          }
 
      }
@@ -90,12 +92,17 @@ fun App() {
                             System.out.println(isShiftDown)
                             if (isShiftDown) {
 
-                                val pan = Vertex(dragAmount.x,dragAmount.y,0f)//.translateX(previousPan.x).translateY(previousPan.y);
-                                val panMatrix = pan.project(cameraModel.toCamera()!!.lookAt())
-                                System.out.println(pan)
-                                System.out.println(panMatrix)
-                                cameraModel.panEye(panMatrix)
-                                cameraModel.panLookAt(panMatrix)
+                                //val pan = Vertex(dragAmount.x,dragAmount.y,0f)//.translateX(previousPan.x).translateY(previousPan.y);
+                                //val panMatrix = pan.project(cameraModel.toCamera()!!.lookAt())
+                                val panMatrixY = cameraModel.up.value.toVertex().scale(Maths.normalize(Vertex(dragAmount.x,dragAmount.y, 0f)).y)
+                                val eyeLine = Maths.subtract(cameraModel.lookAt.value.toVertex(),cameraModel.eye.value.toVertex())
+                                val panMatrixX = cameraModel.up.value.toVertex().rotateAround(eyeLine, Math.toRadians(90.0).toFloat()).scale(Maths.normalize(Vertex(dragAmount.x,dragAmount.y, 0f)).x * -1.0f)
+                                //System.out.println(pan)
+                                //System.out.println(panMatrix)
+                                cameraModel.panEye(panMatrixY)
+                                cameraModel.panLookAt(panMatrixY)
+                                cameraModel.panEye(panMatrixX)
+                                cameraModel.panLookAt(panMatrixX)
                             } else {
 
                                 yzRot += dragAmount.y.toInt()
@@ -109,7 +116,7 @@ fun App() {
                                 //remove padding from offset
                                 var newOffset = offset.minus(IntOffset(16.dp.roundToPx(), 16.dp.roundToPx()))
                                 //detect if offset in draw region
-                                val imageRect = IntSize(512.dp.roundToPx(), 384.dp.roundToPx())
+                                val imageRect = IntSize(64.dp.roundToPx(), 64.dp.roundToPx())
                                 if ((newOffset.x < imageRect.width &&
                                     newOffset.y < imageRect.height) && (
                                             newOffset.x >= 0 &&
@@ -117,8 +124,8 @@ fun App() {
                                             )) {
                                     //scale offset to engine size
 
-                                    var newOffset = IntOffset((newOffset.x/((512.dp.roundToPx()/512))).toInt(),
-                                                              (newOffset.y/(384.dp.roundToPx()/384)).toInt())
+                                    var newOffset = IntOffset((newOffset.x/((64.dp.roundToPx()/512))).toInt(),
+                                                              (newOffset.y/(64.dp.roundToPx()/384)).toInt())
 
                                     for(triangle in triangles) {
                                         if (isInsideTriangle(triangle.v1,triangle.v2,triangle.v3, newOffset)) {
@@ -137,10 +144,10 @@ fun App() {
                         triangles = model.triangles
 
                         val image = engine.draw(tiles)
-                        val iOut = BufferedImage(512, 384, BufferedImage.TYPE_INT_ARGB)
-                        for (x: Int in 0..511) {
-                            for (y: Int in 0..383) {
-                                iOut.setRGB(x, y, (0xFF000000 or image[x + y * 512].toLong()).toInt())
+                        val iOut = BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB)
+                        for (x: Int in 0..63) {
+                            for (y: Int in 0..63) {
+                                iOut.setRGB(x, y, (0xFF000000 or image[x + y * 64].toLong()).toInt())
                             }
                         }
 
