@@ -17,6 +17,9 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
+import Constants.fov
+import Constants.renderX
+import Constants.renderY
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -28,7 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -47,6 +52,11 @@ import kotlinx.coroutines.runBlocking
 import java.awt.image.BufferedImage
 import kotlin.math.PI
 
+object Constants {
+    val renderX = 255
+    val renderY = 191
+    val fov = Pair(1.1f,1.1f)
+}
 
 @Composable
 @Preview
@@ -58,7 +68,8 @@ fun App() {
     var yzRot:Int = 0;
     val shapeModel =  ShapeModel(resources)
     var model: Model = shapeModel.shape
-    val engine = ScanLineEngine(64, 64, model, resources)
+    val engine = ScanLineEngine(renderX, renderY, model, resources)
+
 
     fun updateEye() {
         var vertex = cameraModel.eye.value.toVertex()
@@ -71,9 +82,9 @@ fun App() {
 
      Dispatchers.Default.dispatch(Dispatchers.Default) {
          runBlocking {
-             cameraModel.eye.collect({ it ->  val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(.5f, .5f), Vertex2D(64f, 64f))})
-             cameraModel.up.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(.5f, .5f), Vertex2D(64f, 64f))})
-             cameraModel.lookAt.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(.5f, .5f), Vertex2D(64f, 64f))})
+             cameraModel.eye.collect({ it ->  val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(fov.first, fov.second), Vertex2D(renderX/2, renderY/2))})
+             cameraModel.up.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(fov.first, fov.second), Vertex2D(renderX/2, renderY/2))})
+             cameraModel.lookAt.collect({ it ->   val camera = cameraModel.toCamera();model = shapeModel.shape;model.lookAt(camera, Vertex2D(fov.first, fov.second), Vertex2D(renderX/2, renderY/2))})
          }
 
      }
@@ -85,30 +96,24 @@ fun App() {
             Column(Modifier.fillMaxSize()) {
                 CameraDialog(cameraModel)
                 Row(Modifier.fillMaxSize()) {
-                    val isShiftDown = LocalKeyboard.current.isShiftDown
+                    val isShiftDown = LocalWindowInfo.current.keyboardModifiers.isShiftPressed
                     Canvas(Modifier.fillMaxSize()
-                        .pointerInput(LocalKeyboard.current) {
+                        .pointerInput(LocalWindowInfo.current.keyboardModifiers) {
                         detectDragGestures { change, dragAmount ->
-                            System.out.println(isShiftDown)
                             if (isShiftDown) {
-
-                                //val pan = Vertex(dragAmount.x,dragAmount.y,0f)//.translateX(previousPan.x).translateY(previousPan.y);
-                                //val panMatrix = pan.project(cameraModel.toCamera()!!.lookAt())
                                 val panMatrixY = cameraModel.up.value.toVertex().scale(Maths.normalize(Vertex(dragAmount.x,dragAmount.y, 0f)).y)
                                 val eyeLine = Maths.subtract(cameraModel.lookAt.value.toVertex(),cameraModel.eye.value.toVertex())
                                 val panMatrixX = cameraModel.up.value.toVertex().rotateAround(eyeLine, Math.toRadians(90.0).toFloat()).scale(Maths.normalize(Vertex(dragAmount.x,dragAmount.y, 0f)).x * -1.0f)
-                                //System.out.println(pan)
-                                //System.out.println(panMatrix)
                                 cameraModel.panEye(panMatrixY)
                                 cameraModel.panLookAt(panMatrixY)
                                 cameraModel.panEye(panMatrixX)
                                 cameraModel.panLookAt(panMatrixX)
                             } else {
-
                                 yzRot += dragAmount.y.toInt()
                                 xzRot += dragAmount.x.toInt()
-                                updateEye()}
+                                updateEye()
                             }
+                        }
 
                         detectTapGestures {
                             offset->
@@ -144,10 +149,10 @@ fun App() {
                         triangles = model.triangles
 
                         val image = engine.draw(tiles)
-                        val iOut = BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB)
-                        for (x: Int in 0..63) {
-                            for (y: Int in 0..63) {
-                                iOut.setRGB(x, y, (0xFF000000 or image[x + y * 64].toLong()).toInt())
+                        val iOut = BufferedImage(renderX, renderY, BufferedImage.TYPE_INT_ARGB)
+                        for (x: Int in 0..<renderX) {
+                            for (y: Int in 0..<renderY) {
+                                iOut.setRGB(x, y, (0xFF000000 or image[x + y * renderX].toLong()).toInt())
                             }
                         }
 
@@ -159,6 +164,9 @@ fun App() {
     }
 }
 
+fun Vertex2D(renderX: Int, renderY: Int): Vertex2D {
+   return Vertex2D(renderX.toFloat(), renderY.toFloat())
+}
 
 
 fun main() = application {
